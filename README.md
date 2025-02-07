@@ -1,66 +1,119 @@
-## Foundry
+# Interaction-Based Airdrop Smart Contract
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+## Overview
 
-Foundry consists of:
+The **Interaction-Based Airdrop** is a smart contract that rewards users with tokens based on their interactions with a specific contract. This system ensures that only active participants receive the airdrop, making it a fairer and engagement-driven distribution model.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## Features
 
-## Documentation
+- **Eligibility-Based Airdrop**: Users must interact with a designated smart contract a specified number of times to qualify.
+- **Automated Token Distribution**: Eligible users automatically receive tokens.
+- **Configurable Interaction Threshold**: The contract owner can set the required number of interactions.
+- **Fair & Transparent**: Only genuine interactions count toward eligibility.
+- **Secure Execution**: Utilizes OpenZeppelin’s libraries for security.
 
-https://book.getfoundry.sh/
+## Prerequisites
+
+To deploy and interact with this contract, ensure you have:
+
+- **Node.js** (v16 or higher)
+- [Foundry](https://book.getfoundry.sh/) installed
+- **OpenZeppelin Contracts** for security and standard implementations
+- **A deployed smart contract** that users must interact with to qualify
+
+## Installation Steps
+
+1. **Clone the repository and navigate to the project directory:**
+   ```bash
+   git clone https://github.com/ObedCyber/interaction-airdrop.git
+   cd interaction-airdrop
+   ```
+2. **Install Foundry:** Follow the official Foundry installation guide [here](https://book.getfoundry.sh/getting-started/installation).
+3. **Install dependencies:**
+   ```bash
+   forge install
+   ```
+
+## Smart Contract Details
+
+### 1. **InteractionAirdrop.sol**
+
+#### Key Functions:
+
+- `recordInteraction(address user)`: Logs an interaction for a user.
+- `checkEligibility(address user)`: Checks if the user has met the required interactions for the airdrop.
+- `claimAirdrop()`: Allows eligible users to claim their airdrop reward.
+- `setInteractionThreshold(uint256 newThreshold)`: Sets the required number of interactions for eligibility (owner only).
+- `setAirdropAmount(uint256 newAmount)`: Updates the token amount to be airdropped (owner only).
+
+#### Events:
+
+- `InteractionRecorded(address indexed user, uint256 totalInteractions)`: Emitted when a user interacts with the target contract.
+- `AirdropClaimed(address indexed user, uint256 amount)`: Emitted when a user claims their airdrop.
+- `ThresholdUpdated(uint256 newThreshold)`: Emitted when the interaction requirement is updated.
+- `AirdropAmountUpdated(uint256 newAmount)`: Emitted when the airdrop amount is updated.
+
+#### Constructor Parameters:
+
+- `_airdropToken`: Address of the ERC20 token being distributed.
+- `_targetContract`: Address of the contract users must interact with.
+- `_interactionThreshold`: Number of interactions required for eligibility.
+- `_airdropAmount`: Amount of tokens rewarded per user.
+
+---
 
 ## Usage
 
-### Build
+### 1. **Deploy Contracts**
 
-```shell
-$ forge build
+Deploy the ERC20 token and the `InteractionAirdrop` contract:
+
+```solidity
+airdrop = new InteractionAirdrop(tokenAddress, targetContract, 5, 100 * 1e18);
 ```
 
-### Test
+### 2. **Record Interactions**
 
-```shell
-$ forge test
+Each time a user interacts with the designated contract, call:
+
+```solidity
+airdrop.recordInteraction(msg.sender);
 ```
 
-### Format
+### 3. **Check Eligibility**
 
-```shell
-$ forge fmt
+Users can check if they are eligible:
+
+```solidity
+airdrop.checkEligibility(userAddress);
 ```
 
-### Gas Snapshots
+### 4. **Claim Airdrop**
 
-```shell
-$ forge snapshot
+Eligible users can claim their tokens:
+
+```solidity
+airdrop.claimAirdrop();
 ```
 
-### Anvil
+### 5. **Update Thresholds (Owner Only)**
 
-```shell
-$ anvil
+The owner can modify interaction requirements:
+
+```solidity
+airdrop.setInteractionThreshold(10);
+airdrop.setAirdropAmount(200 * 1e18);
 ```
 
-### Deploy
+---
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+## Security Measures
 
-### Cast
+- **Anti-Sybil Protections**: Prevents bots from spamming interactions.
+- **Access Control**: Only the owner can modify thresholds and airdrop amounts.
+- **Reentrancy Protection**: Ensures users can't claim multiple times unfairly.
 
-```shell
-$ cast <subcommand>
-```
+## License
 
-### Help
+This project is licensed under the **MIT License**.
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
