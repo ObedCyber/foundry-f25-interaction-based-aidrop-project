@@ -1,119 +1,191 @@
-# Interaction-Based Airdrop Smart Contract
+# Interaction-Based Airdrop Project
 
 ## Overview
 
-The **Interaction-Based Airdrop** is a smart contract that rewards users with tokens based on their interactions with a specific contract. This system ensures that only active participants receive the airdrop, making it a fairer and engagement-driven distribution model.
+The **Interaction-Based Airdrop Project** is a decentralized system that rewards users with tokens based on their interactions with an external contract. The project integrates three smart contracts:
+
+1\. **AirdropContract.sol**: Manages the airdrop logic, including user eligibility, reward calculation, and claim mechanics.
+
+2\. **InteractionContract.sol**: Tracks user interactions and enforces rate limits to prevent abuse.
+
+3\. **AirdropToken.sol**: A custom ERC20 token (`MTK`) used as the reward currency.
 
 ## Features
 
-- **Eligibility-Based Airdrop**: Users must interact with a designated smart contract a specified number of times to qualify.
-- **Automated Token Distribution**: Eligible users automatically receive tokens.
-- **Configurable Interaction Threshold**: The contract owner can set the required number of interactions.
-- **Fair & Transparent**: Only genuine interactions count toward eligibility.
-- **Secure Execution**: Utilizes OpenZeppelin’s libraries for security.
+- **Interaction-Based Rewards**: Users earn rewards proportional to their number of interactions with the `InteractionContract`.
+
+- **Dynamic Reward Tiers**: Rewards are calculated based on the user's interaction count (e.g., 10 tokens for 1--5 interactions, 30 tokens for 6--15 interactions, etc.).
+
+- **Rate Limiting**: Prevents users from spamming interactions by enforcing a cooldown period between interactions.
+
+- **Time-Limited Airdrop**: The airdrop is active only within a specified time window.
+
+- **Pause Functionality**: Administrators can pause the airdrop in case of emergencies.
+
+- **Reentrancy Protection**: Ensures secure transactions using OpenZeppelin's `ReentrancyGuard`.
+
+- **Access Control**: Administrative functions are restricted to the contract owner using OpenZeppelin's `Ownable`.
 
 ## Prerequisites
 
-To deploy and interact with this contract, ensure you have:
+To deploy and interact with this project, you will need:
 
 - **Node.js** (v16 or higher)
+
 - [Foundry](https://book.getfoundry.sh/) installed
+
 - **OpenZeppelin Contracts** for security and standard implementations
-- **A deployed smart contract** that users must interact with to qualify
 
-## Installation Steps
+- **Forge-Std Library** for debugging and testing
 
-1. **Clone the repository and navigate to the project directory:**
-   ```bash
-   git clone https://github.com/ObedCyber/interaction-airdrop.git
-   cd interaction-airdrop
-   ```
-2. **Install Foundry:** Follow the official Foundry installation guide [here](https://book.getfoundry.sh/getting-started/installation).
-3. **Install dependencies:**
-   ```bash
-   forge install
-   ```
+### Installation Steps
 
-## Smart Contract Details
+1\. **Clone the repository and navigate to the project directory:**
 
-### 1. **InteractionAirdrop.sol**
+   ```bash
+
+   git clone https://github.com/your-repo/foundry-interaction-based-airdrop.git
+
+   cd foundry-interaction-based-airdrop
+
+   ```
+
+2\. **Install Foundry:**
+
+   Follow the official Foundry installation guide [here](https://book.getfoundry.sh/getting-started/installation).
+
+3\. **Install dependencies:**
+
+   ```bash
+
+   forge install
+
+   ```
+
+## Core Contracts and Functions
+
+### 1. **AirdropContract.sol**
 
 #### Key Functions:
 
-- `recordInteraction(address user)`: Logs an interaction for a user.
-- `checkEligibility(address user)`: Checks if the user has met the required interactions for the airdrop.
-- `claimAirdrop()`: Allows eligible users to claim their airdrop reward.
-- `setInteractionThreshold(uint256 newThreshold)`: Sets the required number of interactions for eligibility (owner only).
-- `setAirdropAmount(uint256 newAmount)`: Updates the token amount to be airdropped (owner only).
+- `userBaseReward(uint256 userInteractionCount)`: Calculates the base reward for a user based on their interaction count.
 
-#### Events:
+- `checkEligibility(address user)`: Checks if a user is eligible for the airdrop based on their interaction count and claim status.
 
-- `InteractionRecorded(address indexed user, uint256 totalInteractions)`: Emitted when a user interacts with the target contract.
-- `AirdropClaimed(address indexed user, uint256 amount)`: Emitted when a user claims their airdrop.
-- `ThresholdUpdated(uint256 newThreshold)`: Emitted when the interaction requirement is updated.
-- `AirdropAmountUpdated(uint256 newAmount)`: Emitted when the airdrop amount is updated.
+- `claimReward()`: Allows eligible users to claim their rewards during the airdrop's active period.
+
+- `pauseAirdrop()` / `unpauseAirdrop()`: Admin functions to pause or unpause the airdrop.
 
 #### Constructor Parameters:
 
-- `_airdropToken`: Address of the ERC20 token being distributed.
-- `_targetContract`: Address of the contract users must interact with.
-- `_interactionThreshold`: Number of interactions required for eligibility.
-- `_airdropAmount`: Amount of tokens rewarded per user.
+- `_rewardToken`: Address of the ERC20 token used for rewards.
+
+- `_interactionContract`: Address of the `InteractionContract` for tracking interactions.
+
+- `_interactionThreshold`: Minimum number of interactions required for eligibility.
+
+- `_startTime` / `_endTime`: Timestamps defining the airdrop's active period.
+
+---
+
+### 2. **InteractionContract.sol**
+
+#### Key Functions:
+
+- `interact()`: Allows users to interact with the contract. Enforces a cooldown period to limit the rate of interactions.
+
+- `getInteractionCount(address user)`: Retrieves the total number of interactions for a specific user.
+
+#### Constructor Parameters:
+
+- None (default cooldown period is set to 6 hours).
+
+#### Events:
+
+- `UserHasInteracted`: Emitted when a user successfully interacts with the contract.
+
+---
+
+### 3. **AirdropToken.sol**
+
+#### Key Functions:
+
+- `constructor(string memory name, string memory symbol, uint256 initialSupply)`: Initializes the token with a name, symbol, and initial supply.
+
+- `mint(address to, uint256 amount)`: Mints new tokens to a specified address (restricted to the contract owner).
+
+#### Token Details:
+
+- Name: `AirdropToken`
+
+- Symbol: `MTK`
+
+---
+
+### Key Enums and State Variables:
+
+- **`mapping(address => bool) isEligible`**: Tracks whether a user is eligible for the airdrop.
+
+- **`mapping(address => bool) hasClaimed`**: Tracks whether a user has already claimed their reward.
+
+- **`uint256 interactionThreshold`**: Minimum number of interactions required for eligibility.
+
+- **`uint256 startTime` / `uint256 endTime`**: Defines the airdrop's active period.
 
 ---
 
 ## Usage
 
-### 1. **Deploy Contracts**
+1\. **Deploy Contracts**:
 
-Deploy the ERC20 token and the `InteractionAirdrop` contract:
+   - Deploy `AirdropToken.sol` with an initial supply.
 
-```solidity
-airdrop = new InteractionAirdrop(tokenAddress, targetContract, 5, 100 * 1e18);
-```
+   - Deploy `InteractionContract.sol`.
 
-### 2. **Record Interactions**
+   - Deploy `AirdropContract.sol` with the addresses of the above contracts and configuration parameters.
 
-Each time a user interacts with the designated contract, call:
+2\. **Interact with the System**:
 
-```solidity
-airdrop.recordInteraction(msg.sender);
-```
+   - Users interact with the `InteractionContract` to increase their interaction count.
 
-### 3. **Check Eligibility**
+   - Eligible users can call `claimReward()` during the airdrop's active period to receive their rewards.
 
-Users can check if they are eligible:
+3\. **Admin Management**:
 
-```solidity
-airdrop.checkEligibility(userAddress);
-```
+   - Set the airdrop's start and end times.
 
-### 4. **Claim Airdrop**
+   - Pause or unpause the airdrop as needed.
 
-Eligible users can claim their tokens:
+4\. **Example Workflow**:
 
-```solidity
-airdrop.claimAirdrop();
-```
+   ```solidity
 
-### 5. **Update Thresholds (Owner Only)**
+   // User interacts with the InteractionContract
 
-The owner can modify interaction requirements:
+   interactionContract.interact();
 
-```solidity
-airdrop.setInteractionThreshold(10);
-airdrop.setAirdropAmount(200 * 1e18);
-```
+   // Check eligibility
 
----
+   bool isEligible = airdropContract.checkEligibility(user);
 
-## Security Measures
+   // Claim reward if eligible
 
-- **Anti-Sybil Protections**: Prevents bots from spamming interactions.
-- **Access Control**: Only the owner can modify thresholds and airdrop amounts.
-- **Reentrancy Protection**: Ensures users can't claim multiple times unfairly.
+   if (isEligible) {
+
+       airdropContract.claimReward();
+
+   }
+
+   ```
+
+## Security
+
+- **Reentrancy Protection**: Prevents malicious reentrant calls during reward claims.
+
+- **Access Control**: Only the owner can manage administrative functions (e.g., pausing/unpausing the airdrop).
+
+- **Error Handling**: Reverts with custom errors for invalid operations, insufficient balance, or out-of-time claims.
 
 ## License
 
 This project is licensed under the **MIT License**.
-
